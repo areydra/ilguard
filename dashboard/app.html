@@ -455,7 +455,41 @@
             return { ilPercentage, ilValue };
         }
 
-        // Helper: Get mock current price (simulates fetching from Pyth)
+        // API Configuration
+        const API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+            ? 'http://localhost:3001'
+            : '';
+
+        // Helper: Fetch position assessment from API
+        async function assessPosition(tokenPair, entryPrice, lowerBound, upperBound, positionValue) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/position/assess`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        tokenPair,
+                        entryPrice,
+                        lowerBound,
+                        upperBound,
+                        positionValue
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to assess position:', error);
+                // Fallback to mock data if API fails
+                return null;
+            }
+        }
+
+        // Helper: Get mock current price (fallback when API unavailable)
         function getMockCurrentPrice(basePrice) {
             // Simulate small price fluctuations
             const volatility = 0.002; // 0.2% volatility
@@ -506,87 +540,101 @@
 
         // Perform position update
         async function updatePosition() {
+            const tokenPair = document.getElementById('token-pair').value;
             const entryPrice = parseFloat(document.getElementById('entry-price').value);
             const lowerBound = parseFloat(document.getElementById('lower-bound').value);
             const upperBound = parseFloat(document.getElementById('upper-bound').value);
             const positionValue = parseFloat(document.getElementById('position-value').value);
 
-            // Simulate getting current price (in production, this would fetch from Pyth)
-            const currentPrice = getMockCurrentPrice(84); // Around $84 for SOL
+            // Try to fetch real data from API
+            const apiData = await assessPosition(tokenPair, entryPrice, lowerBound, upperBound, positionValue);
 
-            // Calculate IL
-            const { ilPercentage, ilValue } = calculateIL(entryPrice, currentPrice, positionValue);
-            const currentPositionValue = positionValue + ilValue;
+            let data;
 
-            // Check if in range
-            const inRange = currentPrice >= lowerBound && currentPrice <= upperBound;
-
-            // Calculate predicted IL (simplified - in production, uses velocity/volatility)
-            const predictedIL = ilPercentage + (Math.random() - 0.5) * 0.5;
-
-            // Calculate risk score (simplified)
-            const ilScore = Math.min((Math.abs(ilPercentage) / 10) * 100, 100);
-            const outOfRangeScore = inRange ? 0 : 100;
-            const volatilityScore = 5; // Low volatility
-            const riskScore = Math.round(ilScore * 0.3 + outOfRangeScore * 0.2 + volatilityScore * 0.1 + Math.abs(predictedIL) * 10 * 0.4);
-
-            // Determine risk level
-            let riskLevel = 'low';
-            if (riskScore >= 75) riskLevel = 'critical';
-            else if (riskScore >= 50) riskLevel = 'high';
-            else if (riskScore >= 25) riskLevel = 'medium';
-
-            // Generate recommendation
-            let action = 'monitor';
-            let urgency = 'low';
-            let reasoning = '';
-            let worthRebalancing = false;
-            let expectedSavings = 0;
-            const gasCost = 0.01;
-
-            if (!inRange) {
-                action = 'rebalance';
-                urgency = 'critical';
-                reasoning = `Position OUT OF RANGE. Not earning fees. Current price: ${formatCurrency(currentPrice)}, Range: ${formatCurrency(lowerBound)}-${formatCurrency(upperBound)}.`;
-                expectedSavings = Math.abs(ilValue) * 0.7;
-                worthRebalancing = expectedSavings > (gasCost * 10);
-            } else if (Math.abs(predictedIL) > 4) {
-                action = 'widen_range';
-                urgency = 'high';
-                reasoning = `Moderate IL predicted (${Math.abs(predictedIL).toFixed(2)}%). Consider widening range.`;
-                expectedSavings = Math.abs(ilValue) * 0.5;
-                worthRebalancing = expectedSavings > (gasCost * 10);
+            if (apiData) {
+                // Use real API data
+                data = {
+                    currentPrice: apiData.currentPrice,
+                    positionValue: apiData.positionValue,
+                    currentIL: apiData.currentIL,
+                    predictedIL: apiData.predictedIL,
+                    riskScore: apiData.riskScore,
+                    inRange: apiData.inRange,
+                    riskLevel: apiData.riskLevel,
+                    action: apiData.recommendation.action,
+                    urgency: apiData.recommendation.urgency,
+                    worthRebalancing: apiData.recommendation.worthRebalancing,
+                    expectedSavings: apiData.recommendation.expectedSavings,
+                    gasCost: apiData.recommendation.gasCost,
+                    reasoning: apiData.recommendation.reasoning
+                };
             } else {
-                reasoning = `Position healthy. IL: ${ilPercentage.toFixed(2)}%, in range, continue monitoring.`;
-            }
+                // Fallback to mock data if API unavailable
+                const currentPrice = getMockCurrentPrice(84);
+                const { ilPercentage, ilValue } = calculateIL(entryPrice, currentPrice, positionValue);
+                const currentPositionValue = positionValue + ilValue;
+                const inRange = currentPrice >= lowerBound && currentPrice <= upperBound;
+                const predictedIL = ilPercentage + (Math.random() - 0.5) * 0.5;
+                const ilScore = Math.min((Math.abs(ilPercentage) / 10) * 100, 100);
+                const outOfRangeScore = inRange ? 0 : 100;
+                const volatilityScore = 5;
+                const riskScore = Math.round(ilScore * 0.3 + outOfRangeScore * 0.2 + volatilityScore * 0.1 + Math.abs(predictedIL) * 10 * 0.4);
 
-            // Update display
-            const data = {
-                currentPrice,
-                positionValue: currentPositionValue,
-                currentIL: ilPercentage,
-                predictedIL,
-                riskScore,
-                inRange,
-                riskLevel,
-                action,
-                urgency,
-                worthRebalancing,
-                expectedSavings,
-                gasCost,
-                reasoning
-            };
+                let riskLevel = 'low';
+                if (riskScore >= 75) riskLevel = 'critical';
+                else if (riskScore >= 50) riskLevel = 'high';
+                else if (riskScore >= 25) riskLevel = 'medium';
+
+                let action = 'monitor';
+                let urgency = 'low';
+                let reasoning = '';
+                let worthRebalancing = false;
+                let expectedSavings = 0;
+                const gasCost = 0.01;
+
+                if (!inRange) {
+                    action = 'rebalance';
+                    urgency = 'critical';
+                    reasoning = `Position OUT OF RANGE. Not earning fees. Current price: ${formatCurrency(currentPrice)}, Range: ${formatCurrency(lowerBound)}-${formatCurrency(upperBound)}.`;
+                    expectedSavings = Math.abs(ilValue) * 0.7;
+                    worthRebalancing = expectedSavings > (gasCost * 10);
+                } else if (Math.abs(predictedIL) > 4) {
+                    action = 'widen_range';
+                    urgency = 'high';
+                    reasoning = `Moderate IL predicted (${Math.abs(predictedIL).toFixed(2)}%). Consider widening range.`;
+                    expectedSavings = Math.abs(ilValue) * 0.5;
+                    worthRebalancing = expectedSavings > (gasCost * 10);
+                } else {
+                    reasoning = `Position healthy. IL: ${ilPercentage.toFixed(2)}%, in range, continue monitoring.`;
+                }
+
+                data = {
+                    currentPrice,
+                    positionValue: currentPositionValue,
+                    currentIL: ilPercentage,
+                    predictedIL,
+                    riskScore,
+                    inRange,
+                    riskLevel,
+                    action,
+                    urgency,
+                    worthRebalancing,
+                    expectedSavings,
+                    gasCost,
+                    reasoning
+                };
+            }
 
             updateRiskDisplay(data);
 
             // Add log entry
             updateCount++;
-            let logMessage = `Update #${updateCount}: Price ${formatCurrency(currentPrice)} | IL ${ilPercentage.toFixed(2)}% | Risk ${riskScore}/100 | Action: ${action.toUpperCase()}`;
+            let logMessage = `Update #${updateCount}: Price ${formatCurrency(data.currentPrice)} | IL ${data.currentIL.toFixed(2)}% | Risk ${data.riskScore}/100 | Action: ${data.action.toUpperCase()}`;
 
-            if (!inRange) {
+            if (!data.inRange) {
                 logMessage += ` 🚨 OUT OF RANGE!`;
                 addLogEntry(logMessage, 'critical');
-            } else if (urgency === 'high') {
+            } else if (data.urgency === 'high') {
                 addLogEntry(logMessage, 'high');
             } else {
                 addLogEntry(logMessage, 'info');
