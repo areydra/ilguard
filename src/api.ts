@@ -217,10 +217,17 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 /**
- * Serve dashboard on root
+ * Serve interactive app on root
  */
 app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../dashboard/app.html'));
+});
+
+/**
+ * Serve static dashboard (alternative view)
+ */
+app.get('/dashboard', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../dashboard/index.html'));
 });
 
 // Start server
