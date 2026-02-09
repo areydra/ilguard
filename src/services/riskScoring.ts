@@ -69,7 +69,7 @@ export class RiskScoringEngine {
    */
   async calculateRiskScore(position: LPPosition): Promise<RiskScore> {
     // Get IL prediction
-    const prediction = await this.predictor.predictIL(position.tokenA.symbol, {
+    const prediction = await this.predictor.predictIL(`${position.tokenA.symbol}/USD`, {
       timeframeMinutes: 30,
       positionValueUSD: position.totalValueUSD,
       entryPrice: position.currentPrice,
@@ -145,7 +145,7 @@ export class RiskScoringEngine {
    */
   async shouldRebalance(position: LPPosition): Promise<RebalanceDecision> {
     // Get IL prediction
-    const prediction = await this.predictor.predictIL(position.tokenA.symbol, {
+    const prediction = await this.predictor.predictIL(`${position.tokenA.symbol}/USD`, {
       timeframeMinutes: 30,
       positionValueUSD: position.totalValueUSD,
       entryPrice: position.currentPrice,
