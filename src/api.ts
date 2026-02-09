@@ -223,13 +223,6 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../dashboard/app.html'));
 });
 
-/**
- * Serve static dashboard (alternative view)
- */
-app.get('/dashboard', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../dashboard/index.html'));
-});
-
 // Start server
 app.listen(PORT, () => {
   console.log(`\n🚀 ILGuard API Server running on http://localhost:${PORT}`);
