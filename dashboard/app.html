@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ILGuard - Interactive IL Protection Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .input-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .input-section h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .risk-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .risk-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .risk-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .risk-low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .risk-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .risk-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .risk-critical {
+            background: #fecaca;
+            color: #7f1d1d;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .recommendation-box {
+            background: #f9fafb;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .recommendation-box strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .monitoring-log {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-timestamp {
+            color: #888;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        .alert-critical {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-high {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🛡️ ILGuard Interactive Dashboard</h1>
+            <p>Real-time impermanent loss protection - Create and monitor your position</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <h2>Create Position</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="token-pair">Token Pair</label>
+                    <input type="text" id="token-pair" value="SOL-USDC" placeholder="e.g. SOL-USDC">
+                </div>
+                <div class="form-group">
+                    <label for="entry-price">Entry Price ($)</label>
+                    <input type="number" id="entry-price" value="100" step="0.01" placeholder="100.00">
+                </div>
+                <div class="form-group">
+                    <label for="lower-bound">Lower Price ($)</label>
+                    <input type="number" id="lower-bound" value="90" step="0.01" placeholder="90.00">
+                </div>
+                <div class="form-group">
+                    <label for="upper-bound">Upper Price ($)</label>
+                    <input type="number" id="upper-bound" value="110" step="0.01" placeholder="110.00">
+                </div>
+                <div class="form-group">
+                    <label for="position-value">Position Value ($)</label>
+                    <input type="number" id="position-value" value="10000" step="100" placeholder="10000">
+                </div>
+                <div class="form-group">
+                    <label for="monitor-duration">Monitor Duration (seconds)</label>
+                    <input type="number" id="monitor-duration" value="60" min="30" max="300" placeholder="60">
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" id="start-btn">Start Monitoring</button>
+                <button class="btn btn-secondary" id="stop-btn" disabled>Stop Monitoring</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="results-section">
+            <!-- Loading State -->
+            <div class="loading" id="loading-state">
+                <div class="spinner"></div>
+                <p>Collecting market data and analyzing position...</p>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div id="risk-assessment" style="display: none;">
+                <div class="risk-card">
+                    <div class="risk-header">
+                        <div class="risk-title" id="risk-title">Position Analysis</div>
+                        <span class="risk-badge" id="risk-badge">Loading...</span>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-label">Current Price</span>
+                            <span class="metric-value" id="current-price">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Position Value</span>
+                            <span class="metric-value" id="position-current-value">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Current IL</span>
+                            <span class="metric-value" id="current-il">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Predicted IL (30min)</span>
+                            <span class="metric-value" id="predicted-il">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Risk Score</span>
+                            <span class="metric-value" id="risk-score">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">In Range</span>
+                            <span class="metric-value" id="in-range">-</span>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-box">
+                        <strong>Recommendation:</strong>
+                        <div id="recommendation-text">Analyzing...</div>
+                    </div>
+                </div>
+
+                <!-- Monitoring Log -->
+                <h3 style="margin-bottom: 12px;">Live Monitoring Updates</h3>
+                <div class="monitoring-log" id="monitoring-log">
+                    <div class="log-entry">
+                        <span class="log-timestamp">[Waiting]</span>
+                        <span>Click "Start Monitoring" to begin...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Built with ❤️ for the Colosseum Agent Hackathon</p>
+            <p><a href="https://github.com/areydra/ilguard" target="_blank">GitHub</a> |
+               <a href="https://agents.colosseum.com" target="_blank">Colosseum</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let isMonitoring = false;
+        let monitoringInterval = null;
+        let monitoringTimeout = null;
+        let updateCount = 0;
+
+        // DOM elements
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resultsSection = document.getElementById('results-section');
+        const loadingState = document.getElementById('loading-state');
+        const riskAssessment = document.getElementById('risk-assessment');
+        const monitoringLog = document.getElementById('monitoring-log');
+
+        // Helper: Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        // Helper: Format timestamp
+        function formatTimestamp() {
+            const now = new Date();
+            return now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Helper: Calculate IL
+        function calculateIL(entryPrice, currentPrice, positionValue) {
+            const priceRatio = currentPrice / entryPrice;
+            const ilPercentage = (2 * Math.sqrt(priceRatio) / (1 + priceRatio) - 1) * 100;
+            const ilValue = (positionValue * ilPercentage) / 100;
+            return { ilPercentage, ilValue };
+        }
+
+        // Helper: Get mock current price (simulates fetching from Pyth)
+        function getMockCurrentPrice(basePrice) {
+            // Simulate small price fluctuations
+            const volatility = 0.002; // 0.2% volatility
+            const change = (Math.random() - 0.5) * 2 * volatility * basePrice;
+            return basePrice + change;
+        }
+
+        // Add log entry
+        function addLogEntry(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type === 'critical' ? 'alert-critical' : ''} ${type === 'high' ? 'alert-high' : ''}`;
+            entry.innerHTML = `
+                <span class="log-timestamp">[${formatTimestamp()}]</span>
+                <span>${message}</span>
+            `;
+            monitoringLog.insertBefore(entry, monitoringLog.firstChild);
+
+            // Keep only last 20 entries
+            while (monitoringLog.children.length > 20) {
+                monitoringLog.removeChild(monitoringLog.lastChild);
+            }
+        }
+
+        // Update risk assessment display
+        function updateRiskDisplay(data) {
+            document.getElementById('current-price').textContent = formatCurrency(data.currentPrice);
+            document.getElementById('position-current-value').textContent = formatCurrency(data.positionValue);
+            document.getElementById('current-il').textContent = data.currentIL.toFixed(2) + '%';
+            document.getElementById('predicted-il').textContent = data.predictedIL.toFixed(2) + '%';
+            document.getElementById('risk-score').textContent = data.riskScore + '/100';
+            document.getElementById('in-range').textContent = data.inRange ? '✅ YES' : '❌ NO';
+
+            // Update risk badge
+            const riskBadge = document.getElementById('risk-badge');
+            riskBadge.textContent = data.riskLevel.toUpperCase();
+            riskBadge.className = `risk-badge risk-${data.riskLevel}`;
+
+            // Update recommendation
+            document.getElementById('recommendation-text').innerHTML = `
+                <strong>Action:</strong> ${data.action.toUpperCase()}<br>
+                <strong>Urgency:</strong> ${data.urgency.toUpperCase()}<br>
+                <strong>Worth Rebalancing:</strong> ${data.worthRebalancing ? '✅ YES' : '❌ NO'}<br>
+                <strong>Expected Savings:</strong> ${formatCurrency(data.expectedSavings)}<br>
+                <strong>Gas Cost:</strong> ${formatCurrency(data.gasCost)}<br><br>
+                ${data.reasoning}
+            `;
+        }
+
+        // Perform position update
+        async function updatePosition() {
+            const entryPrice = parseFloat(document.getElementById('entry-price').value);
+            const lowerBound = parseFloat(document.getElementById('lower-bound').value);
+            const upperBound = parseFloat(document.getElementById('upper-bound').value);
+            const positionValue = parseFloat(document.getElementById('position-value').value);
+
+            // Simulate getting current price (in production, this would fetch from Pyth)
+            const currentPrice = getMockCurrentPrice(84); // Around $84 for SOL
+
+            // Calculate IL
+            const { ilPercentage, ilValue } = calculateIL(entryPrice, currentPrice, positionValue);
+            const currentPositionValue = positionValue + ilValue;
+
+            // Check if in range
+            const inRange = currentPrice >= lowerBound && currentPrice <= upperBound;
+
+            // Calculate predicted IL (simplified - in production, uses velocity/volatility)
+            const predictedIL = ilPercentage + (Math.random() - 0.5) * 0.5;
+
+            // Calculate risk score (simplified)
+            const ilScore = Math.min((Math.abs(ilPercentage) / 10) * 100, 100);
+            const outOfRangeScore = inRange ? 0 : 100;
+            const volatilityScore = 5; // Low volatility
+            const riskScore = Math.round(ilScore * 0.3 + outOfRangeScore * 0.2 + volatilityScore * 0.1 + Math.abs(predictedIL) * 10 * 0.4);
+
+            // Determine risk level
+            let riskLevel = 'low';
+            if (riskScore >= 75) riskLevel = 'critical';
+            else if (riskScore >= 50) riskLevel = 'high';
+            else if (riskScore >= 25) riskLevel = 'medium';
+
+            // Generate recommendation
+            let action = 'monitor';
+            let urgency = 'low';
+            let reasoning = '';
+            let worthRebalancing = false;
+            let expectedSavings = 0;
+            const gasCost = 0.01;
+
+            if (!inRange) {
+                action = 'rebalance';
+                urgency = 'critical';
+                reasoning = `Position OUT OF RANGE. Not earning fees. Current price: ${formatCurrency(currentPrice)}, Range: ${formatCurrency(lowerBound)}-${formatCurrency(upperBound)}.`;
+                expectedSavings = Math.abs(ilValue) * 0.7;
+                worthRebalancing = expectedSavings > (gasCost * 10);
+            } else if (Math.abs(predictedIL) > 4) {
+                action = 'widen_range';
+                urgency = 'high';
+                reasoning = `Moderate IL predicted (${Math.abs(predictedIL).toFixed(2)}%). Consider widening range.`;
+                expectedSavings = Math.abs(ilValue) * 0.5;
+                worthRebalancing = expectedSavings > (gasCost * 10);
+            } else {
+                reasoning = `Position healthy. IL: ${ilPercentage.toFixed(2)}%, in range, continue monitoring.`;
+            }
+
+            // Update display
+            const data = {
+                currentPrice,
+                positionValue: currentPositionValue,
+                currentIL: ilPercentage,
+                predictedIL,
+                riskScore,
+                inRange,
+                riskLevel,
+                action,
+                urgency,
+                worthRebalancing,
+                expectedSavings,
+                gasCost,
+                reasoning
+            };
+
+            updateRiskDisplay(data);
+
+            // Add log entry
+            updateCount++;
+            let logMessage = `Update #${updateCount}: Price ${formatCurrency(currentPrice)} | IL ${ilPercentage.toFixed(2)}% | Risk ${riskScore}/100 | Action: ${action.toUpperCase()}`;
+
+            if (!inRange) {
+                logMessage += ` 🚨 OUT OF RANGE!`;
+                addLogEntry(logMessage, 'critical');
+            } else if (urgency === 'high') {
+                addLogEntry(logMessage, 'high');
+            } else {
+                addLogEntry(logMessage, 'info');
+            }
+        }
+
+        // Start monitoring
+        async function startMonitoring() {
+            if (isMonitoring) return;
+
+            isMonitoring = true;
+            updateCount = 0;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            // Show results section
+            resultsSection.classList.add('active');
+            loadingState.style.display = 'flex';
+            riskAssessment.style.display = 'none';
+
+            // Clear log
+            monitoringLog.innerHTML = '';
+
+            // Simulate data collection (Phase 1)
+            addLogEntry('📊 Collecting market data and building price history...', 'info');
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Show risk assessment
+            loadingState.style.display = 'none';
+            riskAssessment.style.display = 'block';
+
+            addLogEntry('✅ Price history collected. Starting position monitoring...', 'info');
+
+            // Perform first update
+            await updatePosition();
+
+            // Set up continuous monitoring
+            const updateInterval = 15000; // 15 seconds
+            const duration = parseInt(document.getElementById('monitor-duration').value) * 1000;
+
+            monitoringInterval = setInterval(updatePosition, updateInterval);
+
+            // Auto-stop after duration
+            monitoringTimeout = setTimeout(() => {
+                stopMonitoring();
+                addLogEntry('✅ Monitoring completed. Total updates: ' + updateCount, 'info');
+            }, duration);
+        }
+
+        // Stop monitoring
+        function stopMonitoring() {
+            if (!isMonitoring) return;
+
+            isMonitoring = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+
+            if (monitoringTimeout) {
+                clearTimeout(monitoringTimeout);
+                monitoringTimeout = null;
+            }
+
+            addLogEntry('⏸️ Monitoring stopped by user.', 'info');
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startMonitoring);
+        stopBtn.addEventListener('click', stopMonitoring);
+    </script>
+</body>
+</html>
