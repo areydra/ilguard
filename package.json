@@ -4,6 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "demo": "npx ts-node src/demo.ts",
+    "test:il": "npx ts-node src/utils/ilCalculator.ts",
+    "test:price": "npx ts-node src/services/priceService.ts",
+    "test:predictor": "npx ts-node src/services/ilPredictor.ts",
+    "test:monitor": "npx ts-node src/services/positionMonitor.ts",
+    "test:risk": "npx ts-node src/services/riskScoring.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
