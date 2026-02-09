@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "demo": "npx ts-node src/demo.ts",
+    "dashboard": "open dashboard/index.html || xdg-open dashboard/index.html || start dashboard/index.html",
+    "dashboard:serve": "npx serve dashboard -l 3000",
     "test:il": "npx ts-node src/utils/ilCalculator.ts",
     "test:price": "npx ts-node src/services/priceService.ts",
     "test:predictor": "npx ts-node src/services/ilPredictor.ts",
