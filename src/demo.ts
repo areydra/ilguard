@@ -19,10 +19,10 @@ const DEMO_CONFIG = {
   // Mock position details
   position: {
     pair: 'SOL-USDC',
-    entryPrice: 100,
-    lowerBound: 90,
+    entryPrice: 100,     // Entry at $100
+    lowerBound: 90,      // Range: $90-$110
     upperBound: 110,
-    valueUSD: 10000,
+    valueUSD: 10000,     // $10k position
   },
   // How long to monitor
   monitorDurationSeconds: 60,
