@@ -43,32 +43,46 @@ Current tools only show IL AFTER it happens. By then, it's too late.
 
 ### Prerequisites
 - Node.js 18+
-- Solana wallet with devnet SOL
-- Helius API key (free tier works)
+- npm or yarn
 
 ### Installation
 
 \`\`\`bash
-git clone https://github.com/yourusername/ilguard
+git clone https://github.com/areydra/ilguard
 cd ilguard
 npm install
 \`\`\`
 
-### Configuration
+### Run ILGuard
 
+**Option 1: Interactive Dashboard with Real Data (Recommended)**
 \`\`\`bash
-cp .env.example .env
-# Edit .env with your keys
+npm start
+# Visit http://localhost:3001 in your browser
 \`\`\`
 
-### Run Tests
+**Option 2: CLI Demo**
+\`\`\`bash
+npm run demo
+\`\`\`
+
+### Run Individual Tests
 
 \`\`\`bash
 # Test IL calculator
 npm run test:il
 
-# Test full system (coming soon)
-npm run dev
+# Test price service
+npm run test:price
+
+# Test IL predictor
+npm run test:predictor
+
+# Test position monitor
+npm run test:monitor
+
+# Test risk scoring
+npm run test:risk
 \`\`\`
 
 ## How It Works
@@ -105,21 +119,30 @@ See [ILGuard-architecture.md](../ILGuard-architecture.md) for detailed technical
 
 ## Development Status
 
-**Current Phase**: MVP Development (3-day hackathon sprint)
+**Current Phase**: MVP Complete - Ready for Submission
 
 ✅ **Completed**:
-- IL calculator implementation
-- Project structure & config
-- Architecture design
+- IL calculator with concentrated liquidity math
+- Real-time Pyth Network price feeds integration
+- IL prediction engine (velocity + volatility model)
+- Position monitoring service (mock positions for demo)
+- Risk scoring engine with weighted components
+- Interactive web dashboard with real API integration
+- Express backend API with CORS support
+- CLI demo with 7-phase workflow
+- Comprehensive testing suite
+- Demo video and documentation
 
-🚧 **In Progress**:
-- IL prediction engine
-- Position monitoring service
+🚀 **Live Demo**:
+- Interactive Dashboard: `npm start` → http://localhost:3001
+- CLI Demo: `npm run demo`
 
-⏳ **Coming Next**:
-- Auto-rebalancing engine
-- Dashboard UI
-- AgentWallet integration
+⏳ **Post-Hackathon Roadmap**:
+- Real Orca/Meteora position integration
+- Auto-rebalancing execution
+- Jito bundle MEV protection
+- Multi-wallet support
+- Historical performance tracking
 
 ## Contributing
 
@@ -131,9 +154,10 @@ MIT
 
 ## Links
 
-- **Hackathon Project**: [Coming soon]
-- **Demo Video**: [Coming soon]
-- **Forum Post**: [Coming soon]
+- **GitHub Repository**: https://github.com/areydra/ilguard
+- **Demo Video**: https://drive.google.com/file/d/1cEWMnOp2cJLM1jYTVRgj8b7tzSYHGELX/view?usp=sharing
+- **Colosseum Project**: https://arena.colosseum.org/projects/510
+- **Forum Post**: https://forum.colosseum.org/t/ilguard-impermanent-loss-protection-agent/3185
 
 ---
 
