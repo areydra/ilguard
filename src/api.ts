@@ -58,7 +58,7 @@ initializePriceHistory().catch(console.error);
  */
 app.get('/api/price/:symbol', async (req: Request, res: Response) => {
   try {
-    const symbol = req.params.symbol;
+    const symbol = req.params.symbol || '';
     const formattedSymbol = symbol.includes('/') ? symbol : `${symbol}/USD`;
 
     const price = await priceService.getPrice(formattedSymbol);
@@ -91,8 +91,8 @@ app.get('/api/price/:symbol', async (req: Request, res: Response) => {
  */
 app.get('/api/volatility/:symbol', async (req: Request, res: Response) => {
   try {
-    const symbol = req.params.symbol;
-    const timeframe = parseInt(req.query.timeframe as string) || 15;
+    const symbol = req.params.symbol || '';
+    const timeframe = parseInt((req.query.timeframe as string) || '15');
     const formattedSymbol = symbol.includes('/') ? symbol : `${symbol}/USD`;
 
     const volatility = priceService.getVolatility(formattedSymbol, timeframe);
